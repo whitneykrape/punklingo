@@ -3,16 +3,15 @@
 import { useState, useEffect, useRef } from 'react'; 
 
 export default function Home() {
-  console.log('🔄 Page component mounted or re-rendered');
-
   const [inputValue, setInputValue] = useState('');
   
   // Validation status: null (idle), true (correct), false (incorrect)
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null); 
   const isCheckingRef = useRef(false); 
 
-  const TARGET_ANSWER = "HelloWorld123"; 
-  console.log('🎯 Target answer set:', TARGET_ANSWER);
+  const answerArray = [
+     "おはよう ございます"
+  ];
 
   // Timer Ref for debouncing
   const timeoutIdRef = useRef<NodeJS.Timeout | undefined>();
@@ -24,22 +23,12 @@ export default function Home() {
       return; 
     }
     
-    console.log('⏱️ Input changed, clearing previous timer');
     clearTimeout(timeoutIdRef.current); 
 
     timeoutIdRef.current = setTimeout(() => {
-      console.log(`📊 Checking answer: "${inputValue}"`);
-
-      const correct = inputValue === TARGET_ANSWER;
+      const correct = inputValue === answerArray[0];
       setIsCorrect(correct); 
       isCheckingRef.current = false; 
-      
-      if (correct) {
-        console.log('✅ Answer CORRECT!');
-      } else {
-        console.log(`❌ Incorrect: expected "${TARGET_ANSWER}"`);
-      }
-
     }, 800); 
 
     return () => {
@@ -48,9 +37,7 @@ export default function Home() {
     };
   }, [inputValue]); // Re-run whenever inputValue changes
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('📝 Input event triggered');
-    
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {    
     setInputValue(e.target.value); 
     setIsCorrect(null); 
 
@@ -81,7 +68,7 @@ export default function Home() {
 
             {/* Input Field */}
             <input
-              type="text" // Change to 'password' if you want hidden text while typing
+              type="text"
               value={inputValue}
               onChange={handleInputChange}
               placeholder={`Type the answer...`} 
