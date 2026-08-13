@@ -2,49 +2,38 @@
 
 import { useState, useEffect, useRef } from 'react'; 
 
-export default function Home() {
-  const [inputValue, setInputValue] = useState('');
-  
-  // Validation status: null (idle), true (correct), false (incorrect)
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null); 
-  const isCheckingRef = useRef(false); 
+const arrayOfQuestions = [
+  { id: 1, questionText: "Thank You", correctAnswer: "おはよう ございます" },
+  { id: 2, questionText: "You're Welcome", correctAnswer: "おはよう" },
+  { id: 3, questionText: "Good Morning", correctAnswer: "おはよう" }
+];
 
-  const answerArray = [
-     "おはよう ございます"
-  ];
+export default function Home() {  
+  const [validationState, setValidationState] = useState<{[key:string]: boolean|null}>({});
+  const [answers, setAnswers] = useState<Record<string, string>>({}); 
 
-  // Timer Ref for debouncing
-  const timeoutIdRef = useRef<NodeJS.Timeout | undefined>();
+  const timeoutsRef = new Map<number, NodeJS.Timeout>(); 
 
-  useEffect(() => {
-    if (!inputValue.trim()) {
-      setIsCorrect(null);
-      isCheckingRef.current = false;
-      return; 
-    }
+  // Handle change on any input field using the data-id as key for lookup and updating state maps.
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, questionId: number) => {
     
-    clearTimeout(timeoutIdRef.current); 
+    // Update the user's answer input 
+    setAnswers(prev => ({ ...prev, [String(questionId)]: e.target.value }));
 
-    timeoutIdRef.current = setTimeout(() => {
-      const correct = inputValue === answerArray[0];
-      setIsCorrect(correct); 
-      isCheckingRef.current = false; 
-    }, 800); 
+    // Clear any existing timer for this question ID (prevents race conditions during typing).
+    if (timeoutsRef.has(questionId)) clearTimeout(timeoutsRef.get(questionId)!);
 
-    return () => {
-      clearTimeout(timeoutIdRef.current); 
-      isCheckingRef.current = false; 
-    };
-  }, [inputValue]); // Re-run whenever inputValue changes
+    const timeoutId = setTimeout(() => {      
+      const isCorrect = e.target.value === (arrayOfQuestions.find(q => q.id == questionId)?.correctAnswer || "");
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {    
-    setInputValue(e.target.value); 
-    setIsCorrect(null); 
+      setValidationState(prev => ({ ...prev, [String(questionId)]: isCorrect })); 
 
-    isCheckingRef.current = true; 
+    }, 800); // Debounce wait time in milliseconds
     
-    return () => {};
-  };
+    timeoutsRef.set(questionId, timeoutId as unknown as NodeJS.Timeout); 
+  };  
+
+
 
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
@@ -53,29 +42,45 @@ export default function Home() {
         </p>
         <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
 
-          <div className={`p-8 rounded-lg shadow-md border w-full max-w-sm transition-all duration-300 
-            ${isCorrect === null ? '' : ''}
-            ${isCorrect !== null && isCorrect === true ? 'border-green-500 bg-green-50 text-green-700' : ''}
-            ${isCorrect !== null && isCorrect === false ? 'border-red-400 bg-red-50 text-red-600 animate-pulse-short' : ''}
-          `}>
 
-            <h1 className="text-xl font-bold mb-2">Quick Check</h1>
-            <p className={`mb-4 ${isCorrect === true ? 'font-semibold' : 'text-gray-500'}`}>
-              {inputValue.length > 0 
-                ? (isCorrect === true ? "✅ Correct!" : isCorrect === false ? "❌ Try again..." : "") 
-                : "Type the secret code..."}
-            </p>
+      {/* Container for all questions */}
+      <div className="w-full max-w-lg space-y-6">  
+        {arrayOfQuestions.map((q) => { 
+          const questionId = String(q.id); // Use string key to match state object keys
+          
+          return (
+            <fieldset 
+              key={questionId}
+              style={{ 
+                border: validationState[questionId] === true ? '2px solid #16a34a' :  // Green if correct
+                       validationState[questionId] === false && answers[questionId]?.length > 0 ? '2px solid #dc2626' : '', 
+                borderRadius: '8px', padding: '1rem'} } 
+              className="transition-all duration-300"
+            >  
+              
+              {/* Question Label */}
+              <legend className="font-semibold mb-2 text-white"> {q.questionText}</legend>
 
-            {/* Input Field */}
-            <input
-              type="text"
-              value={inputValue}
-              onChange={handleInputChange}
-              placeholder={`Type the answer...`} 
-              className={`w-full p-3 border rounded-lg focus:outline-none transition-all duration-200 ${isCorrect === true ? 'border-green-500 ring-4 ring-green-100' : isCorrect === false && inputValue.length > 0 ? 'border-red-400 ring-4 ring-red-50 shake-effect animate-pulse-once' : 'border-gray-300 focus:border-blue-500'}`}
-            />
+              {/* Input field with onChange tied to question ID and input value tracking logic.  */} 
+              <input
+                type="text"
+                id={`question-${questionId}`}
+                data-id={questionId} // Pass question ID as a key for validation lookup inside handlers 
+                value={answers[questionId] || ""} // Current user's typed answer stored in answers state object.  
+                onChange={(e) => handleInputChange(e, parseInt(questionId))}  // Trigger handler with proper type conversion
+                placeholder={`Enter your answer...`} 
+                className="w-full p-2 border rounded focus:outline-none transition-colors duration-300" />
 
-          </div>
+              {/* Status Message */}
+               <p style={{ color: validationState[questionId] === true ? 'green' : (validationState[questionId] === false && answers[questionId]?.length > 0) ? 'red': '', fontSize: '.9rem', marginTop: '5px'}}> 
+                 {validationState[questionId] === null ? "" : validationState[questionId] === true ? "✅ Correct!" : (answers[questionId]?.length > 0 && "❌ Incorrect.")}
+               </p> 
+
+            </fieldset>  
+          );      
+        })}
+
+      </div>  
 
         </div>
         <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
