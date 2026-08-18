@@ -3,9 +3,9 @@
 import { useState, useEffect, useRef } from 'react'; 
 
 const arrayOfQuestions = [
-  { id: 1, questionText: "Thank You", correctAnswer: "おはよう ございます" },
+  { id: 1, questionText: "Thank You", correctAnswer: "ありがとうございます" },
   { id: 2, questionText: "You're Welcome", correctAnswer: "おはよう" },
-  { id: 3, questionText: "Good Morning", correctAnswer: "おはよう" }
+  { id: 3, questionText: "Good Morning", correctAnswer: "おはようございます" }
 ];
 
 export default function Home() {  
