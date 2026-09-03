@@ -1,13 +1,45 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// prisma/schema.prisma
 
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  // Use 'sqlite' for simple local dev, switch to 'postgresql' for production later
+  provider = "sqlite" 
+  url      = env("DATABASE_URL")
 }
+
+model Question {
+  id          String   @id @default(cuid())
+  title       String
+  content     Text?
+  askerName   String
+  viewsCount  Int      @default(0)
+  answers     Answer[]
+  createdAt   DateTime @default(now())
+
+  @@index([title])
+}
+
+model Answer {
+  id        String    @id @default(cuid())
+  content   Text
+  author    String?
+  accepted  Boolean   @default(false)
+  questionId String
+  question  Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+
+  @@index([questionId])
+}
+
+// Optional: Simple seed script placeholder
+generator client {
+  provider = "prisma-client-js"
+  // Tells Prisma to run seed.ts whenever a migration is deployed
+  // Note: This feature depends on the schema definition, sometimes you need to run manually for dev
+}
+
+// OR in package.json scripts:
+// "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"

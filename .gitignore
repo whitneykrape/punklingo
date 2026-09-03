@@ -43,4 +43,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Ignore local SQLite or Postgres dump files
+*.db
+*.sqlite
+*.sql.*dump
+node_modules/
+.next/
+
 /app/generated/prisma
